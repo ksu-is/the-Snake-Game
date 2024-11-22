@@ -9,7 +9,7 @@ SPACE_SIZE = 50
 BODYPARTS = 3
 SNAKECOLOR = '#00FFFF'
 FOODCOLOR = 'FF0000'
-BACKGROUND_COLOR = '#FFFFFF'
+BACKGROUND_COLOR = '#000000'
 
 class Snake:
 
@@ -22,7 +22,7 @@ class Snake:
             self.coordinates.append([0, 0])
 
         for x, y in self.coordinates:
-            square = canvas.create_rectangle(x,y, x + SPACE_SIZE, y + SPACE_SIZE, fill= SNAKECOLOR, tag='snake')
+            square = canvas.create_rectangle(x, y, x + SPACE_SIZE, y + SPACE_SIZE, fill= SNAKECOLOR, tag='snake')
             self.squares.append(square)
 
 class Food:
@@ -33,47 +33,95 @@ class Food:
         
         self.coordinates = [x,y]
         
-        canvas.create_oval(x,y,x + SPACE_SIZE, fill = FOODCOLOR, tag='FOOD')
+        canvas.create_oval(x, y, x + SPACE_SIZE, y + SPACE_SIZE, fill=FOODCOLOR, tag='food')
 
 def next_turn(snake, food):
 
-        x, y = snake.coordinates [0]
+    x, y = snake.coordinates[0]
 
-        if direction == 'up':
+    if direction == 'up':
             y -= SPACE_SIZE
         
-        elif direction == 'down':
+    elif direction == 'down':
             y+= SPACE_SIZE
         
-        elif direction == 'left':
+    elif direction == 'left':
             x -= SPACE_SIZE
 
-        elif direction == 'right':
+    elif direction == 'right':
             x += SPACE_SIZE
 
-        snake.coordinates.insert(0, (x,y))
+    snake.coordinates.insert(0, (x, y))
 
-        square = canvas.create_rectangle(x, y, x  + SPACE_SIZE, y + SPACE_SIZE)
+    square = canvas.create_rectangle(x, y, x  + SPACE_SIZE, y + SPACE_SIZE, fill=SNAKECOLOR)
 
-        snake.squares.insert (0, square)
+    snake.squares.insert(0, square)
 
-        del snake.coordinates [-1]
+    if x == food.coordinates[0] and y == food.coordinates[1]:
 
-        canvas.delete(snake.squares [-1])
+        global score
+
+        score += 1 
+
+        label.config(text="Score:{}".format(score))
+
+        canvas.delete("food")
+
+        food = Food()
+
+    else:
+            
+        del snake.coordinates[-1]
+
+        canvas.delete(snake.squares[-1])
 
         del snake.squares[-1]
+        
+    if check_collisions(snake):
+        gameover()
 
+    else:
         window.after(SPEED, next_turn, snake, food)
 
 
 def change_dic(new_direction):
-    pass
+
+    global direction
+
+    if new_direction =='left':
+        if direction != 'right':
+            direction = new_direction
+    elif new_direction =='right':
+        if direction != 'left':
+            direction = new_direction
+    elif new_direction =='up':
+        if direction != 'down':
+            direction = new_direction
+    elif new_direction =='down':
+        if direction != 'up':
+            direction = new_direction
 
 def check_collisions():
-    pass
+
+    x, y = snake.coordinates[0]
+
+    if x < 0 or x >= GAME_WIDTH:
+        return True
+    
+    elif y < 0 or y >= GAME_HEIGHT:
+        return True
+    
+    for body_part in snake.coordinates[1:]:
+        if x == body_part[0] and y == body_part [1]:
+            print("GAME OVER")
+            return True
+    
+    return False
 
 def gameover():
-    pass
+    canvas.delete(ALL)
+    canvas.create_text(canvas.winfo_width()/2, canvas.winfo_height()/2
+                        ,font=('consolas', 70), text="GAME OVER", fill="red", tag="gameover")
 
 window = Tk()
 window.title('Snake Game')
@@ -82,10 +130,10 @@ window.resizable (False, False)
 score = 0
 direction = 'down'
 
-label = Label(window, text="Score:{}".format(score),font=('arial',40))
+label = Label(window, text="Score:{}".format(score),font=('consolas',40))
 label.pack()
 
-canvas = Canvas(window, bg = BACKGROUND_COLOR, height = GAME_HEIGHT, width = GAME_WIDTH)
+canvas = Canvas(window, bg=BACKGROUND_COLOR, height=GAME_HEIGHT, width=GAME_WIDTH)
 canvas.pack()
 
 window.update()
@@ -102,9 +150,17 @@ y = int((screen_height/2) - (window_height/2))
 
 window.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
+window.bind('<Left>', lambda event: change_dic('left'))
+window.bind('<Right>', lambda event: change_dic('right'))
+window.bind('<Up>', lambda event: change_dic('up'))
+window.bind('<Down>', lambda event: change_dic('down'))
+
+
 snake = Snake()
 food = Food()
 
 
 next_turn(snake, food)
+
+
 window.mainloop()
